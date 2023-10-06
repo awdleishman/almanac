@@ -3,10 +3,7 @@ channels:
   - defaults
 dependencies:
   - python=3.11
-  - pandas
-  - scikit-learn
-  - statsmodels
-  - lightgbm
-  - ipykernel
-  - plotly
-prefix: /opt/anaconda3/envs/almanac-env
+  - anaconda
+  - pip
+  - pip:
+    - -r requirements.txt
