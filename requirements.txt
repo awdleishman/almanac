@@ -46,7 +46,7 @@ colorlog==6.7.0
 comm==0.1.2
 constantly==15.1.0
 contourpy==1.1.1
-cookiecutter==1.7.3
+cookiecutter==2.1.1
 cryptography==41.0.3
 cssselect==1.1.0
 cycler==0.12.0
