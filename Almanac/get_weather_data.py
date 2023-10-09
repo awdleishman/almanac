@@ -72,10 +72,10 @@ def get_weather_data(place, start, end=datetime.now()):
 
     # Make sure start and end are of type = datetime. This needs work to
     # accept more date formats that may be entered
-    if start is str:
+    if type(start) is str:
         start = datetime.strptime(start, "%Y-%m-%d")
 
-    if end is str:
+    if type(end) is str:
         end = datetime.strptime(end, "%Y-%m-%d")
 
     location = ms.Point(lat, lon)
