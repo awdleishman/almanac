@@ -99,6 +99,11 @@ def binarize(df, cols, thresh=0):
         A string or list of strings containing
         the names of columns in df to binarize.
 
+    thresh : float
+        A number to split the binarization on.
+        Values below thresh are assigned 1,
+        values above thresh are assigned 0.
+
 
     Returns:
 
