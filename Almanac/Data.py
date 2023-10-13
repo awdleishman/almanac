@@ -85,47 +85,45 @@ def get_weather_data(place, start, end=datetime.now()):
     return data
 
 
+def binarize(df, cols, thresh=0):
+    """
+    A function to binarize weather data.
+    Sets values less than 0 to 1 and sets values greater then 0 to 0.
 
-
-def binarize(df,cols):
-    '''
-    A function to binarize weather data. Sets values less than 0 to 1 and sets values greater then 0 to 0.
-    
     Parameters:
-    
+
     df : pandas.DataFrame
         A DataFrame object containing weather data.
-        
+
     cols : str | list
-        A string or list of strings containing the names of columns in df to binarize.
-        
-        
+        A string or list of strings containing
+        the names of columns in df to binarize.
+
+
     Returns:
-    
+
     df : pandas.DataFrame
-        A DataFrame containing the original columns of df and the new columns of binarized data.
-    '''
-    
-    
-    if type(cols) == str:
-        
-        df[cols+'_bin'] = df[cols]
-        
-        for i,temp in enumerate(df[cols+'_bin']):
-            if temp <= 0:
-                df[cols+'_bin'].iloc[i] = 1
+        A DataFrame containing the original columns of df and
+        the new columns of binarized data.
+    """
+
+    if isinstance(cols, str):
+        df[cols + "_bin"] = df[cols]
+
+        for i, temp in enumerate(df[cols + "_bin"]):
+            if temp <= thresh:
+                df[cols + "_bin"].iloc[i] = 1
             else:
-                df[cols+'_bin'].iloc[i] = 0
-    
-    elif type(cols) == list:
-        
+                df[cols + "_bin"].iloc[i] = 0
+
+    elif isinstance(cols, list):
         for col in cols:
-            df[col+'_bin'] = df[col]
-            
-            for i,temp in enumerate(df[col+'_bin']):
-                if temp <= 0:
-                    df[col+'_bin'].iloc[i] = 1
+            df[col + "_bin"] = df[col]
+
+            for i, temp in enumerate(df[col + "_bin"]):
+                if temp <= thresh:
+                    df[col + "_bin"].iloc[i] = 1
                 else:
-                    df[col+'_bin'].iloc[i] = 0
-                    
+                    df[col + "_bin"].iloc[i] = 0
+
     return df
