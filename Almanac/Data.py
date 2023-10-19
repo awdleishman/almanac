@@ -133,63 +133,69 @@ def binarize(df, cols, thresh=0):
 
     return df
 
-	
+
 def get_frost_dates(data):
-    
-    '''
-    A function that finds the dates of the first and last frost of a season for every year in data.
-    First frost is defined as the first day after summer where the minimum temp is <= 0C.
-    Last frost is defined as the last day before summer where the minimum temp is <= 0C.
-    
-    
+    """
+    A function that finds the dates of the first and last frost of a season
+    for every year in data.
+    First frost is defined as the first day after summer where the minimum
+    temp is <= 0C.
+    Last frost is defined as the last day before summer where the minimum temp
+    is <= 0C.
+
+
     Parameters:
-    
+
     data : pandas.DataFrame
         A DataFrame object containing weather data.
-        
-        
+
+
     Returns:
-    
+
     first_frost : list
         A list of the first frost dates of each year.
-        
+
     last_frost : list
         A list of the last frost dates of each year.
-    '''
-    
-    #If binarized column does not exist,
-    #create it.
-    if 'tmin_bin' in data.columns:
+    """
+
+    # If binarized column does not exist,
+    # create it.
+    if "tmin_bin" in data.columns:
         pass
     else:
-        data = binarize(data,'tmin')
-        
-    #Create the dict data_year
-    #This is a dictionary of DataFrames
-    #for each year of data with years as keys
+        data = binarize(data, "tmin")
+
+    # Create the dict data_year
+    # This is a dictionary of DataFrames
+    # for each year of data with years as keys
     data_year = {}
-    
-    for y in df.index.year.unique():
-        data_year[y] = df.loc[df.index.year == y]
-        
-    #Create lists of the first and last frost dates.
+
+    for y in data.index.year.unique():
+        data_year[y] = data.loc[data.index.year == y]
+
+    # Create lists of the first and last frost dates.
     last_frost = []
     first_frost = []
-    
-    #Divide the years in half.
-    #Note this split assumes a location in the Northern Hemisphere
+
+    # Divide the years in half.
+    # Note this split assumes a location in the Northern Hemisphere
     for y in data_year.keys():
-        first_half = data_year[y].loc[data_year[y].index.month<7]
-        second_half = data_year[y].loc[data_year[y].index.month>7]
-    
+        first_half = data_year[y].loc[data_year[y].index.month < 7]
+        second_half = data_year[y].loc[data_year[y].index.month > 7]
+
         try:
-            last_frost.append(first_half['tmin_bin'][first_half['tmin_bin']==1].index[-1])
-        except:
+            last_frost.append(
+                first_half["tmin_bin"][first_half["tmin_bin"] == 1].index[-1]
+            )
+        except Exception:
             last_frost.append(None)
-    
+
         try:
-            first_frost.append(second_half['tmin_bin'][second_half['tmin_bin']==1].index[0])
-        except:
+            first_frost.append(
+                second_half["tmin_bin"][second_half["tmin_bin"] == 1].index[0]
+            )
+        except Exception:
             first_frost.append(None)
-        
-    return first_frost,last_frost
+
+    return first_frost, last_frost
