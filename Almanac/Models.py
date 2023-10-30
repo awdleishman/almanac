@@ -44,7 +44,7 @@ def hw_weekly_frost_date_forecast(train, location=None):
 
     if location is not None:
         # Create an array of offset values to test
-        offset = np.arange(0, 14, 0.5)
+        offset = np.arange(0, 4, 0.5)
         # Get weather data for 9 weeks after the training period
         df_future = get_weather_data(
             location,
@@ -61,12 +61,17 @@ def hw_weekly_frost_date_forecast(train, location=None):
             )
             for x in offset
         ]
-
-        os_ind = (
-            pd.Series(os_test).diff()[pd.Series(os_test).diff() > 0].index[0]
-        )
+        if pd.Series(os_test).diff()[pd.Series(os_test).diff() > 0].empty:
+            os_ind = len(offset) - 1
+        else:
+            os_ind = (
+                pd.Series(os_test)
+                .diff()[pd.Series(os_test).diff() > 0]
+                .index[0]
+            )
         """ The "correct" offset is choosen as the first offset that
-         causes the RMSE to stop decreasing and start increasing.
+         causes the RMSE to stop decreasing and start increasing
+         to a max offset of 3.5.
          This should yield predictions with smaller RMSE
          than no offset and be less likely to be early in the prediction of
          the last frost of spring."""
