@@ -13,7 +13,7 @@ import os
 
 @task
 def get_data(hyperparameters: dict) -> str:
-    """Get the wine dataset."""
+    """Gets the local weather station data"""
     print("fetching data")
     data = get_weather_data(
         hyperparameters["place"],
@@ -21,6 +21,7 @@ def get_data(hyperparameters: dict) -> str:
         hyperparameters["end"],
     )
 
+    # Generating unique folder to store artifacts
     UUID = uuid.uuid4().hex
     dir = "artifacts/" + UUID + "/data/"
     file_name = dir + "full_data.pkl"
@@ -34,7 +35,10 @@ def get_data(hyperparameters: dict) -> str:
 
 @task
 def split_data(UUID: str, hyperparameters: dict) -> None:
+    """Splits the data into train & test sets"""
     print("splitting data")
+
+    # Loading full dataset
     file_name = "artifacts/" + UUID + "/data/full_data.pkl"
     data = pickle.load(open(file_name, "rb"))
 
@@ -59,9 +63,10 @@ def split_data(UUID: str, hyperparameters: dict) -> None:
 
 @task
 def train_model(data_UUID: str, hyperparameters: dict) -> str:
-    """Train a model on the wine dataset."""
+    """Trains a TS model"""
     print("training model")
 
+    # Loading trainind data
     file_name = "artifacts/" + data_UUID + "/data/train.pkl"
     train_data = pickle.load(open(file_name, "rb"))
 
@@ -71,12 +76,8 @@ def train_model(data_UUID: str, hyperparameters: dict) -> str:
         seasonal=hyperparameters["ES__seasonal"],
         seasonal_periods=hyperparameters["ES__seasonal_periods"],
     ).fit()
-    # features = train_data.iloc[2:5]
-    # target = train_data[["tmin"]]
-    # fitted_model = LinearRegression(max_iter=3000).fit(features, target)
 
-    # save the model to disk
-
+    # Generating unique ID for model
     model_UUID = uuid.uuid4().hex
     dir = "artifacts/" + data_UUID + "/models/"
     filename = dir + model_UUID + ".pkl"
@@ -94,11 +95,8 @@ def evaluate_model(
     model_UUID: str,
     hyperparameters: dict,
 ) -> None:
-    """Evaluate model performance on train & test sets"""
+    """Evaluate model performance on test set"""
     print("evaluating model")
-
-    # file_name = 'artifacts/' + data_UUID + "/data/train.pkl"
-    # train_data = pickle.load(open(file_name, 'rb'))
 
     file_name = "artifacts/" + data_UUID + "/data/test.pkl"
     test_data = pickle.load(open(file_name, "rb"))
@@ -140,6 +138,7 @@ def evaluate_model(
 
 @task(disable_deck=False)
 def viz_model(data_UUID: str, model_UUID: str, hyperparameters: dict) -> None:
+    """Runs model evaluation notebook"""
     print("Running analysis notebook")
 
     hyperparameters["model_UUID"] = model_UUID
@@ -154,18 +153,13 @@ def viz_model(data_UUID: str, model_UUID: str, hyperparameters: dict) -> None:
 
     # Setup config
     c = Config()
-
-    # Configure tag removal - be sure to tag your cells to remove  using the
-    # words remove_cell to remove cells. You can also modify the code to use
-    # a different tag word
     c.TagRemovePreprocessor.remove_input_tags = ("hide", "injected-parameters")
     c.TagRemovePreprocessor.enabled = True
 
-    # Configure and run out exporter
+    # Configure and run exporter
     c.HTMLExporter.preprocessors = [
         "nbconvert.preprocessors.TagRemovePreprocessor"
     ]
-
     exporter = HTMLExporter(config=c)
     exporter.register_preprocessor(TagRemovePreprocessor(config=c), True)
 
@@ -181,8 +175,11 @@ def viz_model(data_UUID: str, model_UUID: str, hyperparameters: dict) -> None:
 @workflow
 def training_workflow(parameters: dict) -> None:
     """Put all of the steps together into a single workflow."""
+
     data_UUID = get_data(hyperparameters=parameters)
+
     split_data(UUID=data_UUID, hyperparameters=parameters)
+
     model_UUID = train_model(
         data_UUID=data_UUID,
         hyperparameters=parameters,
