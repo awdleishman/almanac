@@ -2,7 +2,10 @@ from sklearn.metrics import mean_absolute_error
 from flytekit import task, workflow
 from Almanac.Data import get_weather_data
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
-
+import papermill as pm
+from nbconvert import HTMLExporter
+from nbconvert.preprocessors import TagRemovePreprocessor
+from traitlets.config import Config
 import pickle
 import uuid
 import os
@@ -134,51 +137,45 @@ def evaluate_model(
 
 #     return main_deck
 
-# @task(disable_deck=False)
-# def viz_model(
-#     train_data: pd.DataFrame,
-#     test_data: pd.DataFrame,
-#     fitted_model: ExponentialSmoothing,
-#     hyperparameters: dict
-# ) -> None:
-#     print("Running analysis notebook")
-#     pm.execute_notebook(
-#         "model_visualization.ipynb",
-#         "viz_"+ model_name + ".ipynb",
-#         parameters=dict(model_file=model_name,
-#                         train_datafile=train_datafile,
-#                         test_datafile =test_datafile,
-#                         ),
-#         report_mode=True,
-#     )
 
-#     # Setup config
-#     c = Config()
+@task(disable_deck=False)
+def viz_model(data_UUID: str, model_UUID: str, hyperparameters: dict) -> None:
+    print("Running analysis notebook")
 
-#     # Configure tag removal - be sure to tag your cells to remove  using the
-#     # words remove_cell to remove cells. You can also modify the code to use
-#     # a different tag word
-#     c.TagRemovePreprocessor.remove_input_tags = ("hide",
-#                                                   "injected-paramters")
-#     c.TagRemovePreprocessor.enabled = True
+    hyperparameters["model_UUID"] = model_UUID
+    hyperparameters["data_UUID"] = data_UUID
 
-#     # Configure and run out exporter
-#     c.HTMLExporter.preprocessors = (
-#                               ["nbconvert.preprocessors.TagRemovePreprocessor"])
+    pm.execute_notebook(
+        "model_visualization.ipynb",
+        "model_visualization_output.ipynb",
+        parameters=hyperparameters,
+        report_mode=True,
+    )
 
-#     exporter = HTMLExporter(config=c)
-#     exporter.register_preprocessor(TagRemovePreprocessor(config=c), True)
+    # Setup config
+    c = Config()
 
-#     # Configure and run our exporter - returns a tuple
-#            - first element with html,
-#     # second with notebook metadata
-#     output = HTMLExporter(config=c).from_filename(
-#         data_dir + "otus_pd_tracking_overall.ipynb"
-#     )
+    # Configure tag removal - be sure to tag your cells to remove  using the
+    # words remove_cell to remove cells. You can also modify the code to use
+    # a different tag word
+    c.TagRemovePreprocessor.remove_input_tags = ("hide", "injected-parameters")
+    c.TagRemovePreprocessor.enabled = True
 
-#     # Write to output html file
-#     with open(data_dir + "overall.html", "w") as f:
-#         f.write(output[0])
+    # Configure and run out exporter
+    c.HTMLExporter.preprocessors = [
+        "nbconvert.preprocessors.TagRemovePreprocessor"
+    ]
+
+    exporter = HTMLExporter(config=c)
+    exporter.register_preprocessor(TagRemovePreprocessor(config=c), True)
+
+    output = HTMLExporter(config=c).from_filename(
+        "model_visualization_output.ipynb"
+    )
+
+    # Write to output html file
+    with open("output.html", "w") as f:
+        f.write(output[0])
 
 
 @workflow
@@ -197,9 +194,9 @@ def training_workflow(parameters: dict) -> None:
         hyperparameters=parameters,
     )
 
-    # main_deck = viz_model(train_data=train_data,
-    #                         test_data=test_data,
-    #                fitted_model=trained_model,
-    #                hyperparameters=parameters)
-
+    viz_model(
+        data_UUID=data_UUID,
+        model_UUID=model_UUID,
+        hyperparameters=parameters,
+    )
     return
