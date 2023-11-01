@@ -44,7 +44,7 @@ def hw_weekly_frost_date_forecast(train, location=None):
 
     if location is not None:
         # Create an array of offset values to test
-        offset = np.arange(0, 4, 0.5)
+        offset = np.arange(0, 7, 0.5)
         # Get weather data for 9 weeks after the training period
         df_future = get_weather_data(
             location,
