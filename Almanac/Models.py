@@ -6,7 +6,7 @@ from sklearn.metrics import mean_squared_error
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 
-def hw_weekly_frost_date_forecast(train, location=None):
+def hw_weekly_frost_date_forecast(train, location=None, forecast_period=52):
     """
     A function that predicts one year of weekly weather data using
         a modified Holt Winters model.
@@ -23,6 +23,10 @@ def hw_weekly_frost_date_forecast(train, location=None):
                         to allow tuning of the model
             using out of sample data.
 
+    forecast_period: int (optional)
+            An integer representing the number of weeks that should be
+            forecast. Defaults to 52 weeks (1 year).
+
 
     Returns:
 
@@ -33,14 +37,25 @@ def hw_weekly_frost_date_forecast(train, location=None):
     offset: float
             The offset that was used when tuning the model.
     """
+    # If the data frequency is not weekly then resample it
+    # before training the model.
+    if type(train["tmin"].index.freq) is not pd._libs.tslibs.offsets.Week:
+        fitted_model = ExponentialSmoothing(
+            train["tmin"].resample("W").min(),
+            trend="add",
+            seasonal="add",
+            seasonal_periods=52,
+        ).fit()
+        predicted = fitted_model.forecast(forecast_period)
 
-    fitted_model = ExponentialSmoothing(
-        train["tmin"].resample("W").min(),
-        trend="add",
-        seasonal="add",
-        seasonal_periods=52,
-    ).fit()
-    predicted = fitted_model.forecast(52)
+    else:
+        fitted_model = ExponentialSmoothing(
+            train["tmin"],
+            trend="add",
+            seasonal="add",
+            seasonal_periods=52,
+        ).fit()
+        predicted = fitted_model.forecast(forecast_period)
 
     if location is not None:
         # Create an array of offset values to test
