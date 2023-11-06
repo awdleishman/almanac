@@ -1,12 +1,10 @@
-from Almanac.Data import get_weather_data
-from datetime import timedelta
 import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 
-def hw_weekly_frost_date_forecast(train, location=None, forecast_period=52):
+def hw_weekly_frost_date_forecast(train, forecast_period=52, max_offset=7):
     """
     A function that predicts one year of weekly weather data using
         a modified Holt Winters model.
@@ -18,14 +16,13 @@ def hw_weekly_frost_date_forecast(train, location=None, forecast_period=52):
             A DataFrame object containing weather data
                         on which to train the model.
 
-    location: str (optional)
-            A string containing the location of the weather data
-                        to allow tuning of the model
-            using out of sample data.
-
     forecast_period: int (optional)
             An integer representing the number of weeks that should be
             forecast. Defaults to 52 weeks (1 year).
+
+    max_offset: int (optional)
+            An integer representing the maximum allowed offset
+            of the prediction.
 
 
     Returns:
@@ -40,58 +37,63 @@ def hw_weekly_frost_date_forecast(train, location=None, forecast_period=52):
     # If the data frequency is not weekly then resample it
     # before training the model.
     if type(train["tmin"].index.freq) is not pd._libs.tslibs.offsets.Week:
+        train = train.resample("W").min()
         fitted_model = ExponentialSmoothing(
-            train["tmin"].resample("W").min(),
+            train["tmin"][0:-9],
             trend="add",
             seasonal="add",
             seasonal_periods=52,
         ).fit()
-        predicted = fitted_model.forecast(forecast_period)
+        predicted = fitted_model.forecast(12)
 
     else:
         fitted_model = ExponentialSmoothing(
-            train["tmin"],
+            train["tmin"][0:-9],
             trend="add",
             seasonal="add",
             seasonal_periods=52,
         ).fit()
-        predicted = fitted_model.forecast(forecast_period)
+        predicted = fitted_model.forecast(12)
 
-    if location is not None:
-        # Create an array of offset values to test
-        offset = np.arange(0, 7, 0.5)
-        # Get weather data for 9 weeks after the training period
-        df_future = get_weather_data(
-            location,
-            start=train.index[-1] + timedelta(weeks=1),
-            end=train.index[-1] + timedelta(weeks=9),
+    offset = np.arange(0, max_offset, 0.5)
+
+    # Grab the last 9 weeks of data to use
+    # for determining the offset.
+    df_future = train["tmin"][-9:]
+
+    # Calculate the RMSE between the new 9 week period
+    # and the prediction - offset
+    os_test = [
+        mean_squared_error(
+            df_future,
+            predicted[df_future.index] - x,
+            squared=False,
         )
-        # Calculate the RMSE between the new 9 week period
-        # and the prediction - offset
-        os_test = [
-            mean_squared_error(
-                df_future["tmin"].resample("W").min(),
-                predicted[df_future["tmin"].resample("W").min().index] - x,
-                squared=False,
-            )
-            for x in offset
-        ]
-        if pd.Series(os_test).diff()[pd.Series(os_test).diff() > 0].empty:
-            os_ind = len(offset) - 1
-        else:
-            os_ind = (
-                pd.Series(os_test)
-                .diff()[pd.Series(os_test).diff() > 0]
-                .index[0]
-            )
-        """ The "correct" offset is choosen as the first offset that
-         causes the RMSE to stop decreasing and start increasing
-         to a max offset of 3.5.
-         This should yield predictions with smaller RMSE
-         than no offset and be less likely to be early in the prediction of
-         the last frost of spring."""
-        predicted = predicted - offset[os_ind]
-        # return the prediction series and the offset that was used.
-        return predicted, offset[os_ind]
+        for x in offset
+    ]
+    if pd.Series(os_test).diff()[pd.Series(os_test).diff() > 0].empty:
+        os_ind = len(offset) - 1
     else:
-        return predicted
+        os_ind = (
+            pd.Series(os_test).diff()[pd.Series(os_test).diff() > 0].index[0]
+        )
+    """ The "correct" offset is choosen as the first offset that
+        causes the RMSE to stop decreasing and start increasing
+        to a max offset of 6.5.
+        This should yield predictions with smaller RMSE
+        than no offset and be less likely to be early in the prediction of
+        the last frost of spring."""
+
+    # Retrain the model on all of the training data
+    # and forecast
+    fitted_model = ExponentialSmoothing(
+        train["tmin"],
+        trend="add",
+        seasonal="add",
+        seasonal_periods=52,
+    ).fit()
+    predicted = fitted_model.forecast(forecast_period)
+
+    predicted = predicted - offset[os_ind]
+    # return the prediction series and the offset that was used.
+    return predicted, offset[os_ind]
