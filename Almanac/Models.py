@@ -79,7 +79,7 @@ def hw_weekly_frost_date_forecast(train, forecast_period=52, max_offset=7):
         )
     """ The "correct" offset is choosen as the first offset that
         causes the RMSE to stop decreasing and start increasing
-        to a max offset of 6.5.
+        to a max offset of max_offset.
         This should yield predictions with smaller RMSE
         than no offset and be less likely to be early in the prediction of
         the last frost of spring."""
