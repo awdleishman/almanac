@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 
 def hw_weekly_frost_date_forecast(train, forecast_period=52, max_offset=7):
@@ -97,3 +98,25 @@ def hw_weekly_frost_date_forecast(train, forecast_period=52, max_offset=7):
     predicted = predicted - offset[os_ind]
     # return the prediction series and the offset that was used.
     return predicted, offset[os_ind]
+
+
+def sarima_forecast(data, config, start=None, end=None):
+    order, sorder, trend = config
+    model = SARIMAX(
+        data,
+        order=order,
+        seasonal_order=sorder,
+        trend=trend,
+        enforce_stationarity=False,
+        enforce_invertibility=False,
+    )
+
+    model_fit = model.fit()
+
+    if (start is not None) & (end is not None):
+        prediction = model_fit.predict(start=start, end=end)
+        print("Returning forecast")
+        return prediction
+    else:
+        print("Returning fitted model")
+        return model_fit
