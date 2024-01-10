@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 
 def hw_weekly_frost_date_forecast(train, forecast_period=52, max_offset=7):
@@ -97,3 +98,60 @@ def hw_weekly_frost_date_forecast(train, forecast_period=52, max_offset=7):
     predicted = predicted - offset[os_ind]
     # return the prediction series and the offset that was used.
     return predicted, offset[os_ind]
+
+
+def sarima_forecast(
+    data, config=((3, 0, 2), (3, 0, 0, 52), "c"), start=None, end=None
+):
+    """
+    A function that builds a SARIMA model and uses
+    that model to forecast future temperatures.
+
+    Parameters:
+
+    data: pandas.DataFrame
+        A DataFrame object containing weather data to train on.
+        The expected format is weekly sampled minimum temperature data.
+
+    config: tuple
+        A tuple specifying the order, seasonal order,
+        and trend parameters for the
+        SARIMA model.
+
+    start: str
+        A string specifying the date to start forecasting.
+        Expected form is "YYYY-MM-DD"
+
+    end: str
+        A string specifying the date to end forecasting.
+        Expected form is "YYYY-MM-DD"
+
+
+    Returns:
+
+        prediction: pandas.DataFrame
+            A DataFrame of predicted temperatures with date index.
+
+        model_fit: statsmodels.tsa.statespace.sarimax.SARIMAXResultsWrapper
+            A fitted SARIMA model.
+    """
+
+    order, sorder, trend = config
+    model = SARIMAX(
+        data,
+        order=order,
+        seasonal_order=sorder,
+        trend=trend,
+        enforce_stationarity=False,
+        enforce_invertibility=False,
+    )
+
+    model_fit = model.fit()
+
+    if (start is not None) & (end is not None):
+        prediction = model_fit.predict(start=start, end=end)
+        print("Returning forecast")
+        return prediction
+    else:
+        print("Returning fitted model")
+        return model_fit
