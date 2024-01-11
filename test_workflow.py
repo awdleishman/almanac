@@ -1,7 +1,9 @@
 from sklearn.metrics import mean_absolute_error
 from flytekit import task, workflow
 from Almanac.Data import get_weather_data
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from Almanac.Models import sarima_forecast
+
+# from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import papermill as pm
 from nbconvert import HTMLExporter
 from nbconvert.preprocessors import TagRemovePreprocessor
@@ -20,6 +22,8 @@ def get_data(hyperparameters: dict) -> str:
         hyperparameters["start"],
         hyperparameters["end"],
     )
+
+    data = data.resample("W").min()
 
     # Generating unique folder to store artifacts
     UUID = uuid.uuid4().hex
@@ -70,12 +74,12 @@ def train_model(data_UUID: str, hyperparameters: dict) -> str:
     file_name = "artifacts/" + data_UUID + "/data/train.pkl"
     train_data = pickle.load(open(file_name, "rb"))
 
-    fitted_model = ExponentialSmoothing(
-        train_data["tmin"],
-        trend=hyperparameters["ES__trend"],
-        seasonal=hyperparameters["ES__seasonal"],
-        seasonal_periods=hyperparameters["ES__seasonal_periods"],
-    ).fit()
+    sarima_config = ((3, 0, 0), (0, 1, 1, 52), ("c"))
+
+    fitted_model = sarima_forecast(
+        data=train_data["tmin"],
+        config=sarima_config,
+    )
 
     # Generating unique ID for model
     model_UUID = uuid.uuid4().hex
