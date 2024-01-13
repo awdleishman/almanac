@@ -100,7 +100,42 @@ def hw_weekly_frost_date_forecast(train, forecast_period=52, max_offset=7):
     return predicted, offset[os_ind]
 
 
-def sarima_forecast(data, config, start=None, end=None):
+def sarima_forecast(
+    data, config=((3, 0, 2), (3, 0, 0, 52), "c"), start=None, end=None
+):
+    """
+    A function that builds a SARIMA model and uses
+    that model to forecast future temperatures.
+
+    Parameters:
+
+    data: pandas.DataFrame
+        A DataFrame object containing weather data to train on.
+        The expected format is weekly sampled minimum temperature data.
+
+    config: tuple
+        A tuple specifying the order, seasonal order,
+        and trend parameters for the
+        SARIMA model.
+
+    start: str
+        A string specifying the date to start forecasting.
+        Expected form is "YYYY-MM-DD"
+
+    end: str
+        A string specifying the date to end forecasting.
+        Expected form is "YYYY-MM-DD"
+
+
+    Returns:
+
+        prediction: pandas.DataFrame
+            A DataFrame of predicted temperatures with date index.
+
+        model_fit: statsmodels.tsa.statespace.sarimax.SARIMAXResultsWrapper
+            A fitted SARIMA model.
+    """
+
     order, sorder, trend = config
     model = SARIMAX(
         data,
