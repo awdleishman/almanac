@@ -144,7 +144,7 @@ def run_app():
                         f"SARIMA Prediction Weekly Min Temperature"
                         f" {figure.data[0].x[0].strftime('%Y-%m-%d')}"
                         f" to {figure.data[0].x[-1].strftime('%Y-%m-%d')}"
-                        f"for {location}"
+                        f" for {location}"
                     ),
                     "x": 0.5,
                     "y": 0.95,
