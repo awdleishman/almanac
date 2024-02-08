@@ -92,8 +92,6 @@ app.layout = html.Div(
     ]
 )
 
-app.run(host="0.0.0.0", port="10000")
-
 
 @app.callback(Output("text-output", "children"), Input("location", "value"))
 def update_location_div(location):
@@ -248,3 +246,6 @@ def generate_figure(data_json, model, location):
         )
 
         return figure
+
+
+app.run(host="0.0.0.0", port="10000")
