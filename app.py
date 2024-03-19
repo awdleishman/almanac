@@ -4,8 +4,8 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.express as px
 
-from Almanac.Data import get_weather_data, get_frost_dates
-from Almanac.Models import hw_weekly_frost_date_forecast, sarima_forecast
+from almanac.data import get_weather_data, get_frost_dates
+from almanac.models import hw_weekly_frost_date_forecast, sarima_forecast
 
 from datetime import timedelta
 import time
